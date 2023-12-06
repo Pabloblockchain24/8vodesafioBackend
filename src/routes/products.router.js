@@ -1,30 +1,23 @@
 import { Router } from "express";
+import productModel from "../dao/models/product.model.js"
 const router = Router()
-
-
 import {generateProduct} from "../utils.js"
-
 import CustomError from "../services/errors/CustomError.js"
 import EErrors from "../services/errors/enums.js"
-import { generateProductErrorInfo } from "../services/errors/info.js"
-
-let products = []
+import { generateProductErrorInfo, generateParamErrorInfo } from "../services/errors/info.js"
+import mongoose from "mongoose";
 
 router.get("/mockingproducts", async(req,res) => {
-
     for (let i=0; i<100;i++){
-        products.push(generateProduct())
+        await productModel.create(generateProduct())
     }
-    res.send({status:"success", payload:products})
-
+    const productos = await productModel.find({})
+    res.send({result:"success", payload: productos })
 })
 
-
-
 router.post("/", async(req,res) => {
-    const {title, price, category, id} = req.body
-
-    if(!title || !price || !category){
+    const {title, price, category} = req.body
+    if(!title || !price || !category || isNaN(price)){
         CustomError.createError({
             name: "Product creation error",
             cause: generateProductErrorInfo({title,price,category}),
@@ -32,28 +25,23 @@ router.post("/", async(req,res) => {
             code: EErrors.INVALID_TYPES_ERROR
         })
     }
-
-    const product = {title,price,category,id}
-    products.push(product)
-
-    res.send({status:"success", payload:product})
+    const product = {title,price,category}
+    let result = await productModel.create(product)
+    res.send({status:"success", payload:result})
 })
 
 router.get("/:pid", async(req,res) => {
     const pid = req.params.pid
-
-    if ( !typeof(pid) === Number || typeof(pid) === undefined  || pid<1){
+    if ( !mongoose.Types.ObjectId.isValid(pid)){
         CustomError.createError({
             name: "Get product error",
-            cause: generateProductErrorInfo({pid}),
+            cause: generateParamErrorInfo(pid),
             message: "Error trying to get Product",
             code: EErrors.INVALID_PARAM
         })
     }
-
     let product = await productModel.findOne({_id: pid})
     res.send({status:"success", payload:product})
-
 })
 
 export default router

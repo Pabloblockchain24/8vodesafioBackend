@@ -8,5 +8,5 @@ export const generateProductErrorInfo = (product) => {
 
 export const generateParamErrorInfo = (param) => {
     return `Params received were incompleted or not valid.
-    * Params: needs to be a positive Number, received ${param}`
+    * Params: needs to be a valid ObjectId, received ${param}`
 }
